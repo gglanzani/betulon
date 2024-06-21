@@ -40,5 +40,6 @@ And then
 docker run \
   -v <db_path>:/usr/src/app/database \
   -v <logs_path>:/usr/src/app/logs \
+  --env-file .env \
   betulon:latest  
 ```
