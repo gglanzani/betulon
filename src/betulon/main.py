@@ -176,11 +176,22 @@ def cli():
         access_token=os.getenv("MASTODON_ACCESS_TOKEN"),
         api_base_url=os.getenv("MASTODON_URL"),
     )
-    min_id = get_json_state("min_id.json")["min_id"]
-    new_min_id = get_new_min_id(masto)
-    bookmarks = get_bookmarks(masto, min_id)
-    insert_bookmarks(bookmarks)
-    write_json_state({"min_id": new_min_id}, "min_id.json")
+    min_id_dct = get_json_state("min_id.json")
+    if min_id_dct:
+        min_id = min_id_dct.get("min_id")
+
+    succeeded = False
+    while not succeeded:
+        new_min_id = get_new_min_id(masto)
+        bookmarks = get_bookmarks(masto, min_id)
+        if new_min_id == get_new_min_id(
+            masto
+        ):  # this happens if the user didn't add any new bookmark while processing
+            insert_bookmarks(bookmarks)
+            write_json_state({"min_id": new_min_id}, "min_id.json")
+            succeeded = True
+        else:
+            logger.warning("The user added new bookmarks. Skipping writing to db")
 
 
 if __name__ == "__main__":
