@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Dict, Tuple
 
 from mastodon import Mastodon
+from markdownify import markdownify as md
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ def get_bookmarks(masto: Mastodon, min_id=None) -> List[Bookmark]:
         Bookmark(
             url=bookmark["url"],
             title="toot by " + bookmark["account"]["url"],
-            description=bookmark["content"],
+            description=md(bookmark["content"]),
             creation_time=bookmark["created_at"],
             tags=[tag["name"] for tag in bookmark["tags"]],
         )
