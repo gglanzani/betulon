@@ -28,7 +28,7 @@ def get_json_state(filename: str) -> Optional[Dict]:
     If empty, non-existing, or malformed returns `None`
     """
 
-    path = pathlib.Path(filename)
+    path = os.getenv("STATE_PATH", ".") / pathlib.Path(filename)
     try:
         with open(path, "r") as f:
             content = f.read()
@@ -46,7 +46,7 @@ def get_json_state(filename: str) -> Optional[Dict]:
 
 
 def write_json_state(dct: Dict, filename: str) -> None:
-    path = pathlib.Path(filename)
+    path = os.getenv("STATE_PATH", ".") / pathlib.Path(filename)
     with open(path, "w") as f:
         f.write(json.dumps(dct))
 
