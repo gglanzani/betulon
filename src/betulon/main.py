@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Tuple
 from mastodon import Mastodon
 from markdownify import markdownify as md
 
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -32,12 +33,14 @@ def get_json_state(filename: str) -> Optional[Dict]:
     try:
         with open(path, "r") as f:
             content = f.read()
+        logger.debug(f"File {path} read")
     except FileNotFoundError:
         logger.info(f"{filename} not found, returning None")
         return None
 
     try:
         state = json.loads(content)
+        logger.info(f"state loaded, excerpt {str(state)[:100]}")
         return state
     except json.JSONDecodeError:
         path.unlink()  # it is malformed
@@ -45,17 +48,20 @@ def get_json_state(filename: str) -> Optional[Dict]:
         return None
 
 
-def write_json_state(dct: Dict, filename: str) -> None:
+def write_json_state(state: Dict, filename: str) -> None:
     path = os.getenv("STATE_PATH", ".") / pathlib.Path(filename)
     with open(path, "w") as f:
-        f.write(json.dumps(dct))
+        f.write(json.dumps(state))
+        logger.debug(f"state dumped to {path}")
 
 
-def get_new_min_id(masto) -> int:
+def get_new_min_id(masto: Mastodon) -> int:
     bookmarks = masto.bookmarks()
     # when calling `.bookmarks()`, we get by default the last bookmarks
     # and the _pagination_prev["min_id"] contains the `min_id` of the most recent bookmark
-    return bookmarks._pagination_prev["min_id"]
+    min_id = bookmarks._pagination_prev["min_id"]
+    logger.info(f"The new min_id for next time is {min_id}")
+    return min_id
 
 
 def get_bookmarks(masto: Mastodon, min_id=None) -> List[Bookmark]:
@@ -65,11 +71,16 @@ def get_bookmarks(masto: Mastodon, min_id=None) -> List[Bookmark]:
         bookmarks = masto.fetch_remaining(first_page)  # see docs fetch_remaining
     else:
         # if we have `min_id`, we can discard `first_page`, except for getting `new_min_id`
+        logger.debug(f"Calling masto.bookmarks with min_id={min_id}")
         page = masto.bookmarks(min_id=min_id)
         bookmarks = page
+        logger.info(f"loaded {len(page)} bookmarks")
+        logger.info(f"bookmarks contains now {len(bookmarks)} bookmarks")
         while page:
             page = masto.fetch_previous(page)  # fetch_previous fetches newer toots
+            logger.info(f"loaded {len(page)} bookmarks")
             bookmarks.extend(page)
+            logger.info(f"bookmarks contains now {len(bookmarks)} bookmarks")
     return [
         Bookmark(
             url=bookmark["url"],
@@ -149,22 +160,23 @@ def insert_bookmarks(
 
 def cli():
     # logging
-    log_level = os.getenv("LOG_LEVEL", "WARNING")
-    path = os.getenv("LOG_PATH")
-    filepath = f"{path}/{__name__}.log"
+    log_level = os.getenv("LOG_LEVEL", "DEBUG")
+    logger.setLevel(log_level)
+    path = pathlib.Path(os.getenv("LOG_PATH", "."))
+    filepath = path / pathlib.Path(f"{__name__}.log")
     handler = logging.FileHandler(filepath, mode="a", encoding="utf-8")
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     handler.setFormatter(formatter)
-    handler.setLevel(log_level)
+    handler.setLevel(log_level)  # TODO change back
     logger.addHandler(handler)
 
     masto = Mastodon(
         access_token=os.getenv("MASTODON_ACCESS_TOKEN"),
         api_base_url=os.getenv("MASTODON_URL"),
     )
-    min_id = get_json_state("min_id.json")
+    min_id = get_json_state("min_id.json")["min_id"]
     new_min_id = get_new_min_id(masto)
     bookmarks = get_bookmarks(masto, min_id)
     insert_bookmarks(bookmarks)
@@ -172,4 +184,5 @@ def cli():
 
 
 if __name__ == "__main__":
+    logger.warning("started")
     cli()
