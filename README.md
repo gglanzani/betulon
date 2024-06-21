@@ -19,11 +19,12 @@ Customize it to your liking. To get the `MASTODON_ACCESS_TOKEN`:
 - Give it a name and give it the `read:bookmarks` scope.
 - Submit it and then, by clicking its name, copy the Access Token.
 
-Run it like so
+Run it like so (in fish)
 
 ```
 pip install -e .
-betulon
+# source your .env in your shell. If you use fish, `export (cat .env)`
+export (cat .env); betulon
 ```
 
 ### Docker
