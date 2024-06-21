@@ -32,16 +32,31 @@ export (cat .env); betulon
 If you wish to use it with Docker, first build it
 
 ```
-docker build -t betulon -f Dockerfile .
+$ docker build -t betulon -f Dockerfile .
 ```
 
-And then
+Then update these variables in `.env`:
 
 ```
-docker run \
-  -v <db_path>:/usr/src/app/database \
-  -v <logs_path>:/usr/src/app/logs \
-  -v <state_path>:/usr/src/app/state \
-  --env-file .env \
-  betulon:latest  
+DB_PATH=/usr/src/app/database/links.betula
+LOGS_PATH=/usr/src/app/logs
+STATE_PATH=/usr/src/app/state
+```
+
+and run it like so
+
+```
+$ docker run \
+    -v <db_path>:/usr/src/app/database \
+    -v <logs_path>:/usr/src/app/logs \
+    -v <state_path>:/usr/src/app/state \
+    --env-file .env \
+    --name betulon_container
+    betulon:latest  
+```
+
+If you wish to have `cron` run it every hour, add the following to your crontab
+
+```
+00 * * * * docker container start betulon_container
 ```
