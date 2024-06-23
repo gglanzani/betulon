@@ -75,12 +75,12 @@ def get_bookmarks(masto: Mastodon, min_id=None) -> List[Bookmark]:
         page = masto.bookmarks(min_id=min_id)
         bookmarks = page
         logger.info(f"loaded {len(page)} bookmarks")
-        logger.info(f"bookmarks contains now {len(bookmarks)} bookmarks")
         while page:
             page = masto.fetch_previous(page)  # fetch_previous fetches newer toots
             logger.info(f"loaded {len(page)} bookmarks")
             bookmarks.extend(page)
-            logger.info(f"bookmarks contains now {len(bookmarks)} bookmarks")
+
+    logger.info(f"bookmarks contains {len(bookmarks)} bookmarks")
     return [
         Bookmark(
             url=bookmark["url"],
@@ -95,6 +95,7 @@ def get_bookmarks(masto: Mastodon, min_id=None) -> List[Bookmark]:
 
 def db_path() -> str:
     path = os.getenv("DB_PATH", "test.sqlite")
+    logger.info(f"Database path set to {path}")
     return path
 
 
@@ -169,7 +170,7 @@ def cli():
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     handler.setFormatter(formatter)
-    handler.setLevel(log_level)  # TODO change back
+    handler.setLevel(log_level)
     logger.addHandler(handler)
 
     masto = Mastodon(
@@ -195,5 +196,4 @@ def cli():
 
 
 if __name__ == "__main__":
-    logger.warning("started")
     cli()
