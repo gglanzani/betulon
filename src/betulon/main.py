@@ -146,7 +146,9 @@ def insert_bookmarks(
                 bookmark.title,
                 bookmark.description,
                 1,  # bookmarks can be visible by default when coming from Mastodon
-                bookmark.creation_time,
+                bookmark.creation_time.replace(
+                    tzinfo=None
+                ),  # betula doesn't want a timezone
             ),
         )
         row = cursor.fetchone()
