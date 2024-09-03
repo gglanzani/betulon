@@ -182,6 +182,8 @@ def cli():
     min_id_dct = get_json_state("min_id.json")
     if min_id_dct:
         min_id = min_id_dct.get("min_id")
+    else:
+        min_id = None
 
     succeeded = False
     while not succeeded:
